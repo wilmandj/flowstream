@@ -30,48 +30,73 @@ def draw_node(dot, node_name, node_type):
         dot.node(node_name, node_name, shape="ellipse")
 
 
-def generate_data_flow_diagram(nodes, flows, output_format="png"):
-    """Generates a data flow diagram with standard symbols."""
-    dot = Digraph(comment='Data Flow Diagram', format=output_format)
+def generate_data_flow_diagram(nodes, flows, output_format="png", fontsize="8", layout="sfdp"):
+    """Generates a data flow diagram with standard symbols and formatting."""
+    dot = Digraph(comment='Data Flow Diagram', format=output_format,
+                    engine=layout,
+                    node_attr={'fontsize': fontsize, 'fontname': 'Arial'},
+                    edge_attr={'fontsize': fontsize, 'fontname': 'Arial', 'color': '#00000080', 'bgcolor': '#ffffffcc'})
 
     for node in nodes:
         draw_node(dot, node["name"], node["type"])
 
     for flow in flows:
-        dot.edge(flow["source"], flow["destination"], label=flow["label"])
+        dot.edge(flow["source"], flow["destination"], label=flow["label"], bgcolor='#ffffffcc', arrowhead='vee', arrowtail='vee' if flow.get("bidirectional", False) else None, dir='both' if flow.get("bidirectional", False) else 'forward', minlen='2') # Added minlen
+        if flow.get("bidirectional", False):
+            dot.edge(flow["destination"], flow["source"], label="", style='invis', minlen='2') # Invisible edge for spacing
 
     return dot
 
-def generate_bpmn_diagram(nodes, flows, output_format="png"):
-    dot = Digraph(comment='BPMN Diagram', format=output_format)
+def generate_bpmn_diagram(nodes, flows, output_format="png", fontsize="8", layout="sfdp"):
+    dot = Digraph(comment='BPMN Diagram', format=output_format,
+                    engine=layout,
+                    node_attr={'fontsize': fontsize, 'fontname': 'Arial'},
+                    edge_attr={'fontsize': fontsize, 'fontname': 'Arial', 'color': '#00000080', 'bgcolor': '#ffffffcc'})
     for node in nodes:
         draw_node(dot, node["name"], node["type"])
     for flow in flows:
-        dot.edge(flow["source"], flow["destination"], label=flow["label"])
+        dot.edge(flow["source"], flow["destination"], label=flow["label"], bgcolor='#ffffffcc', arrowhead='vee', arrowtail='vee' if flow.get("bidirectional", False) else None, dir='both' if flow.get("bidirectional", False) else 'forward', minlen='2')
+        if flow.get("bidirectional", False):
+            dot.edge(flow["destination"], flow["source"], label="", style='invis', minlen='2')
     return dot
 
-def generate_uml_diagram(nodes, flows, output_format="png"):
-    dot = Digraph(comment='UML Diagram', format=output_format)
+def generate_uml_diagram(nodes, flows, output_format="png", fontsize="8", layout="sfdp"):
+    dot = Digraph(comment='UML Diagram', format=output_format,
+                    engine=layout,
+                    node_attr={'fontsize': fontsize, 'fontname': 'Arial'},
+                    edge_attr={'fontsize': fontsize, 'fontname': 'Arial', 'color': '#00000080', 'bgcolor': '#ffffffcc'})
     for node in nodes:
         draw_node(dot, node["name"], node["type"])
     for flow in flows:
-        dot.edge(flow["source"], flow["destination"], label=flow["label"])
+        dot.edge(flow["source"], flow["destination"], label=flow["label"], bgcolor='#ffffffcc', arrowhead='vee', arrowtail='vee' if flow.get("bidirectional", False) else None, dir='both' if flow.get("bidirectional", False) else 'forward', minlen='2')
+        if flow.get("bidirectional", False):
+            dot.edge(flow["destination"], flow["source"], label="", style='invis', minlen='2')
     return dot
 
-def generate_erd_diagram(nodes, flows, output_format="png"):
-    dot = Digraph(comment='ERD Diagram', format=output_format)
+def generate_erd_diagram(nodes, flows, output_format="png", fontsize="8", layout="sfdp"):
+    dot = Digraph(comment='ERD Diagram', format=output_format,
+                    engine=layout,
+                    node_attr={'fontsize': fontsize, 'fontname': 'Arial'},
+                    edge_attr={'fontsize': fontsize, 'fontname': 'Arial', 'color': '#00000080', 'bgcolor': '#ffffffcc'})
     for node in nodes:
         draw_node(dot, node["name"], node["type"])
     for flow in flows:
-        dot.edge(flow["source"], flow["destination"], label=flow["label"])
+        dot.edge(flow["source"], flow["destination"], label=flow["label"], bgcolor='#ffffffcc', arrowhead='vee', arrowtail='vee' if flow.get("bidirectional", False) else None, dir='both' if flow.get("bidirectional", False) else 'forward', minlen='2')
+        if flow.get("bidirectional", False):
+            dot.edge(flow["destination"], flow["source"], label="", style='invis', minlen='2')
     return dot
 
-def generate_process_flow_diagram(nodes, flows, output_format="png"):
-    dot = Digraph(comment='Process Flow Diagram', format=output_format)
+def generate_process_flow_diagram(nodes, flows, output_format="png", fontsize="8", layout="sfdp"):
+    dot = Digraph(comment='Process Flow Diagram', format=output_format,
+                    engine=layout,
+                    node_attr={'fontsize': fontsize, 'fontname': 'Arial'},
+                    edge_attr={'fontsize': fontsize, 'fontname': 'Arial', 'color': '#00000080', 'bgcolor': '#ffffffcc'})
     for node in nodes:
         draw_node(dot, node["name"], node["type"])
     for flow in flows:
-        dot.edge(flow["source"], flow["destination"], label=flow["label"])
+        dot.edge(flow["source"], flow["destination"], label=flow["label"], bgcolor='#ffffffcc', arrowhead='vee', arrowtail='vee' if flow.get("bidirectional", False) else None, dir='both' if flow.get("bidirectional", False) else 'forward', minlen='2')
+        if flow.get("bidirectional", False):
+            dot.edge(flow["destination"], flow["source"], label="", style='invis', minlen='2')
     return dot
 
 def save_diagram(dot, filename, output_format):
@@ -92,11 +117,48 @@ def display_diagram(dot, output_format):
     """Displays the generated diagram in the Streamlit app."""
     try:
         if output_format == "dot":
-            st.text(dot.source)
+            st.text_area("DOT Source", dot.source, height=300)
         else:
-            st.graphviz_chart(dot)
+            st.graphviz_chart(dot, use_container_width=True)
     except Exception as e:
         st.error(f"Error displaying diagram: {e}")
+
+def load_flows(diagram_type, filename=""):
+    """Loads previously saved flows from a JSON file."""
+    if not filename:
+        st.warning("Please select a file to load flows.")
+        return None
+    filepath = f"{diagram_type}_flows_{filename}.json"
+    if os.path.exists(filepath):
+        with open(filepath, "r") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                st.warning(f"Could not decode JSON from {filepath}. Starting with empty flows.")
+                return None
+    else:
+        st.warning(f"File '{filepath}' not found.")
+        return None
+
+def save_flows(diagram_type, flows, filename=""):
+    """Saves the current flows to a JSON file with a given filename."""
+    if not filename:
+        st.warning("Please enter a filename to save flows.")
+        return
+    filepath = f"{diagram_type}_flows_{filename}.json"
+    with open(filepath, "w") as f:
+        json.dump(flows, f, indent=4)  # Added indent for readability
+    st.success(f"Flows saved to {filepath}")
+
+def get_available_flow_files(diagram_type):
+    """Gets a list of available flow files for the given diagram type."""
+    files = []
+    for filename in os.listdir("."):
+        if filename.startswith(f"{diagram_type}_flows_") and filename.endswith(".json"):
+            # Extract the filename without the prefix and extension
+            name = filename[len(f"{diagram_type}_flows_"):-len(".json")]
+            files.append(name)
+    return files
 
 # --- Streamlit App ---
 
@@ -121,7 +183,7 @@ def main():
 def introduction_page():
     st.header("Introduction: Design Documentation Tool")
     st.write("""
-    Welcome to the Design Documentation Tool! This application is designed to help you create and visualize various types of diagrams essential for documenting complex systems, especially those involving AI and data management. 
+    Welcome to the Design Documentation Tool! This application is designed to help you create and visualize various types of diagrams essential for documenting complex systems, especially those involving AI and data management.
 
     From data flow diagrams to UML and BPMN, this tool provides a structured environment to define the components of your system and their interactions. It supports the creation of different diagram types with customizable nodes and flows, allowing for clear and comprehensive documentation.
 
@@ -179,7 +241,7 @@ def diagram_page_logic(session_state, diagram_type, node_types, generate_functio
     if f'{diagram_type}_flows' not in session_state:
         session_state[f'{diagram_type}_flows'] = []
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:
         st.header("Nodes")
@@ -207,33 +269,63 @@ def diagram_page_logic(session_state, diagram_type, node_types, generate_functio
         source = st.selectbox("Source:", [""] + node_names, key=f'{diagram_type}_source')
         destination = st.selectbox("Destination:", [""] + node_names, key=f'{diagram_type}_dest')
         label = st.text_input("Label:", key=f'{diagram_type}_label')
+        bidirectional = st.checkbox("Bidirectional Flow", key=f'{diagram_type}_bidirectional')
         if st.button("Add Data Flow", key=f'{diagram_type}_add_flow'):
             if source and destination and label and source != destination:
-                session_state[f'{diagram_type}_flows'].append({"source": source, "destination": destination, "label": label})
+                session_state[f'{diagram_type}_flows'].append({"source": source, "destination": destination, "label": label, "bidirectional": bidirectional})
                 st.success(f"Data flow '{label}' added.")
             elif not source or not destination or not label:
                 st.warning("Please fill in all fields for the data flow.")
             elif source == destination:
                 st.warning("Source and destination cannot be the same.")
         for i, flow in enumerate(session_state[f'{diagram_type}_flows']):
-            st.write(f"{flow['source']} -> {flow['destination']}: {flow['label']} [<a href='#' id='delete_{diagram_type}_flow_{i}'>Delete</a>]", unsafe_allow_html=True)
+            st.write(f"{flow['source']} -> {flow['destination']}: {flow['label']} {'<->' if flow['bidirectional'] else ''} [<a href='#' id='delete_{diagram_type}_flow_{i}'>Delete</a>]", unsafe_allow_html=True)
             st.markdown(f"""
             <script>
             document.getElementById('delete_{diagram_type}_flow_{i}').addEventListener('click', function() {{
-                Streamlit.setSessionState({{{diagram_type}_flows: {json.dumps(session_state[f'{diagram_type}_flows'][:i] + session_state[f'{diagram_type}_flows'][i+1:])}}});
+                let current_flows = {json.dumps(session_state[f'{diagram_type}_flows'])};
+                current_flows.splice({i}, 1);
+                Streamlit.setSessionState({{{diagram_type}_flows: current_flows}});
             }});
             </script>
             """, unsafe_allow_html=True)
 
+        save_filename = st.text_input("Save Flows As:", key=f'{diagram_type}_save_filename')
+        if st.button("Save Flows", key=f'{diagram_type}_save_flows'):
+            save_flows(diagram_type, session_state[f'{diagram_type}_flows'], save_filename)
+
+    with col3:
+        st.header("Load Flows")
+        available_files = get_available_flow_files(diagram_type)
+        if available_files:
+            load_filename = st.selectbox("Select Flows to Load:", [""] + available_files, key=f'{diagram_type}_load_filename')
+        else:
+            st.info("No saved flow files found.")
+            load_filename = ""  # Ensure load_filename is defined even if no files exist
+
+        if st.button("Load Flows", key=f'{diagram_type}_load_button'):
+            if load_filename:
+                loaded_flows = load_flows(diagram_type, load_filename)
+                if loaded_flows is not None:
+                    session_state[f'{diagram_type}_flows'] = loaded_flows
+                    st.success(f"Flows loaded from {diagram_type}_flows_{load_filename}.json")
+                else:
+                    st.warning("Could not load flows.")
+            else:
+                st.warning("Please select a file to load flows from.")
+
     st.header("Diagram")
     output_format = st.selectbox("Select output format:", ["png", "svg", "pdf", "dot"], key=f'{diagram_type}_output_format')
+    layout_options = ["dot", "neato", "fdp", "sfdp", "twopi", "circo"]
+    layout_style = st.selectbox("Select Layout Style:", layout_options, index=layout_options.index("sfdp"), key=f'{diagram_type}_layout')
+    fontsize_options = ["8", "10", "12", "14", "16"]
+    fontsize = st.selectbox("Select Font Size:", fontsize_options, index=0, key=f'{diagram_type}_fontsize')
     filename = st.text_input("Enter filename (without extension):", key=f'{diagram_type}_filename', value=f"{diagram_type}_diagram")
-
 
     if st.button("Generate, Display and Save Diagram", key=f'{diagram_type}_gen'):
         if session_state[f'{diagram_type}_nodes'] and session_state[f'{diagram_type}_flows']:
-            dot = generate_function(session_state[f'{diagram_type}_nodes'], session_state[f'{diagram_type}_flows'], output_format)
-            # Display diagram - Full width, adjust font size
+            dot = generate_function(session_state[f'{diagram_type}_nodes'], session_state[f'{diagram_type}_flows'], output_format, fontsize, layout_style)
+            # Display diagram directly using st.graphviz_chart
             st.graphviz_chart(dot, use_container_width=True)
             # Save diagram
             filepath = save_diagram(dot, filename, output_format)
@@ -242,6 +334,6 @@ def diagram_page_logic(session_state, diagram_type, node_types, generate_functio
         else:
             st.warning("Please add nodes and data flows to generate the diagram.")
 
-                
+
 if __name__ == "__main__":
     main()
