@@ -254,11 +254,14 @@ def diagram_page_logic(session_state, diagram_type, node_types, generate_functio
             else:
                 st.warning("Please enter a node name.")
         for i, node in enumerate(session_state[f'{diagram_type}_nodes']):
-            st.write(f"{node['type']}: {node['name']}  [<a href='#' id='delete_{diagram_type}_node_{i}'>Delete</a>]", unsafe_allow_html=True)
+            st.write(f"{node['type']}: {node['name']}  [<a href='#' id='delete_{diagram_type}_node_{i}'>Delete</a>", unsafe_allow_html=True)
             st.markdown(f"""
             <script>
+            <script>
             document.getElementById('delete_{diagram_type}_node_{i}').addEventListener('click', function() {{
-                Streamlit.setSessionState({{{diagram_type}_nodes: {json.dumps(session_state[f'{diagram_type}_nodes'][:i] + session_state[f'{diagram_type}_nodes'][i+1:])}}});
+                let current_nodes = {json.dumps(session_state[f'{diagram_type}_nodes'])};
+                current_nodes.splice({i}, 1);
+                Streamlit.setSessionState({{{diagram_type}_nodes: current_nodes}});
             }});
             </script>
             """, unsafe_allow_html=True)
@@ -272,15 +275,21 @@ def diagram_page_logic(session_state, diagram_type, node_types, generate_functio
         bidirectional = st.checkbox("Bidirectional Flow", key=f'{diagram_type}_bidirectional')
         if st.button("Add Data Flow", key=f'{diagram_type}_add_flow'):
             if source and destination and label and source != destination:
-                session_state[f'{diagram_type}_flows'].append({"source": source, "destination": destination, "label": label, "bidirectional": bidirectional})
+                session_state[f'{diagram_type}_flows'].append(
+                    {"source": source, "destination": destination, "label": label, "bidirectional": bidirectional}
+                )
                 st.success(f"Data flow '{label}' added.")
             elif not source or not destination or not label:
                 st.warning("Please fill in all fields for the data flow.")
             elif source == destination:
                 st.warning("Source and destination cannot be the same.")
         for i, flow in enumerate(session_state[f'{diagram_type}_flows']):
-            st.write(f"{flow['source']} -> {flow['destination']}: {flow['label']} {'<->' if flow['bidirectional'] else ''} [<a href='#' id='delete_{diagram_type}_flow_{i}'>Delete</a>]", unsafe_allow_html=True)
+            st.write(
+                f"{flow['source']} -> {flow['destination']}: {flow['label']} {'<->' if flow['bidirectional'] else ''} [<a href='#' id='delete_{diagram_type}_flow_{i}'>Delete</a>",
+                unsafe_allow_html=True,
+            )
             st.markdown(f"""
+            <script>
             <script>
             document.getElementById('delete_{diagram_type}_flow_{i}').addEventListener('click', function() {{
                 let current_flows = {json.dumps(session_state[f'{diagram_type}_flows'])};
@@ -314,17 +323,26 @@ def diagram_page_logic(session_state, diagram_type, node_types, generate_functio
             else:
                 st.warning("Please select a file to load flows from.")
 
+        if st.button("Reset", key=f'{diagram_type}_reset'):
+            session_state[f'{diagram_type}_nodes'] = []
+            session_state[f'{diagram_type}_flows'] = []
+            st.success("Nodes and flows reset.")
+
     st.header("Diagram")
     output_format = st.selectbox("Select output format:", ["png", "svg", "pdf", "dot"], key=f'{diagram_type}_output_format')
     layout_options = ["dot", "neato", "fdp", "sfdp", "twopi", "circo"]
-    layout_style = st.selectbox("Select Layout Style:", layout_options, index=layout_options.index("sfdp"), key=f'{diagram_type}_layout')
+    layout_style = st.selectbox("Select Layout Style:", layout_options, index=layout_options.index("sfdp"),
+                         key=f'{diagram_type}_layout')
     fontsize_options = ["8", "10", "12", "14", "16"]
     fontsize = st.selectbox("Select Font Size:", fontsize_options, index=0, key=f'{diagram_type}_fontsize')
-    filename = st.text_input("Enter filename (without extension):", key=f'{diagram_type}_filename', value=f"{diagram_type}_diagram")
+    filename = st.text_input("Enter filename (without extension):", key=f'{diagram_type}_filename',
+                             value=f"{diagram_type}_diagram")
 
     if st.button("Generate, Display and Save Diagram", key=f'{diagram_type}_gen'):
         if session_state[f'{diagram_type}_nodes'] and session_state[f'{diagram_type}_flows']:
-            dot = generate_function(session_state[f'{diagram_type}_nodes'], session_state[f'{diagram_type}_flows'], output_format, fontsize, layout_style)
+            dot = generate_function(session_state[f'{diagram_type}_nodes'],
+                                    session_state[f'{diagram_type}_flows'], output_format, fontsize,
+                                    layout_style)
             # Display diagram directly using st.graphviz_chart
             st.graphviz_chart(dot, use_container_width=True)
             # Save diagram
@@ -333,7 +351,6 @@ def diagram_page_logic(session_state, diagram_type, node_types, generate_functio
                 st.success(f"Diagram saved as: {filepath}")
         else:
             st.warning("Please add nodes and data flows to generate the diagram.")
-
 
 if __name__ == "__main__":
     main()
