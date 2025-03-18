@@ -191,14 +191,7 @@ Show sequences of actions and decision-making logic.\n
 
 def diagram_page_logic(session_state, diagram_type, node_types, connection_label):
     """
-    Manages the UI logic for a specific diagram type, including node and connection management,
-    saving/loading, and diagram generation.
-
-    Args:
-        session_state (streamlit.runtime.session_state.SessionState): The Streamlit session state.
-        diagram_type (str): The identifier for the current diagram type (e.g., 'dfd', 'bpmn').
-        node_types (list): A list of available node types for the current diagram.
-        connection_label (str): The user-friendly label for the connections (e.g., "Data Flows", "Relationships").
+    Manages the UI logic for a specific diagram type.
     """
     if f'{diagram_type}_nodes' not in session_state:
         session_state[f'{diagram_type}_nodes'] = []
@@ -222,7 +215,7 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
             with col_node:
                 st.markdown(f"- {node['type']}: {node['name']}")
             with col_delete_node:
-                if st.button("Delete", key=f'delete_{diagram_type}_node_{i}'):
+                if st.button("🗑️", key=f'delete_{diagram_type}_node_{i}'):
                     del session_state[f'{diagram_type}_nodes'][i]
                     st.rerun()
 
@@ -249,7 +242,7 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
                 bidirectional_arrow = "<->" if connection['bidirectional'] else "->"
                 st.markdown(f"- {connection['source']} {bidirectional_arrow} {connection['destination']}: {connection['label']}")
             with col_delete_connection:
-                if st.button("Delete", key=f'delete_{diagram_type}_connection_{i}'):
+                if st.button("🗑️", key=f'delete_{diagram_type}_connection_{i}'):
                     del session_state[f'{diagram_type}_connections'][i]
                     st.rerun()
 
@@ -310,7 +303,6 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
     default_fontsize_index = fontsize_options.index(12)
     fontsize = st.selectbox("Select Font Size:", fontsize_options, index=default_fontsize_index, key=f'{diagram_type}_fontsize')
 
-    # New: Label Distance Control
     label_distance = st.slider("Label Distance:", min_value=1.0, max_value=5.0, value=1.5, step=0.1,
                                  key=f'{diagram_type}_label_distance',
                                  help="Controls the distance of edge labels from the edges.")
@@ -320,38 +312,9 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
 
     if st.button("Generate and Display Diagram", key=f'{diagram_type}_gen'):
         if session_state[f'{diagram_type}_nodes'] and session_state[f'{diagram_type}_connections']:
-            # --- Indirect Scaling based on Font Size ---
-            scale_factor = fontsize / 12.0  # Base scale on a default font size of 12
-
-            node_fontsize = str(int(8 * scale_factor)) # Adjust node label font size
-            edge_fontsize = str(int(8 * scale_factor)) # Adjust edge label font size
-            arrowsize = str(0.8 * scale_factor)       # Adjust arrowhead size
-            penwidth = str(1.0 * scale_factor)        # Adjust edge thickness
-
-            dot = Digraph(comment=f'{diagram_type.upper()} Diagram', format=output_format,
-                            engine=layout_style,
-                            node_attr={'fontsize': node_fontsize, 'fontname': 'Arial'},
-                            edge_attr={'fontsize': edge_fontsize, 'fontname': 'Arial', 'color': '#00000080',
-                                       'bgcolor': '#ffffffcc', 'labeldistance': str(label_distance),
-                                       'labelposition': label_position, 'arrowsize': arrowsize, 'penwidth': penwidth})
-
-            active_nodes = set()
-            for connection in session_state[f'{diagram_type}_connections']:
-                active_nodes.add(connection["source"])
-                active_nodes.add(connection["destination"])
-
-            for node in session_state[f'{diagram_type}_nodes']:
-                if node["name"] in active_nodes or not session_state[f'{diagram_type}_connections']:
-                    draw_node(dot, node["name"], node["type"])
-
-            for connection in session_state[f'{diagram_type}_connections']:
-                dot.edge(connection["source"], connection["destination"], label=connection["label"],
-                         bgcolor='#ffffffcc', arrowhead='vee',
-                         arrowtail='vee' if connection.get("bidirectional", False) else None,
-                         dir='both' if connection.get("bidirectional", False) else 'forward', minlen='2')
-                if connection.get("bidirectional", False):
-                    dot.edge(connection["destination"], connection["source"], label="", style='invis', minlen='2') # Invisible edge for spacing
-
+            dot = generate_diagram(session_state[f'{diagram_type}_nodes'],
+                                     session_state[f'{diagram_type}_connections'], output_format, fontsize,
+                                     layout_style, diagram_type, label_position, st.session_state[f'{diagram_type}_label_distance'])
             st.graphviz_chart(dot, use_container_width=True)
             filepath = save_diagram(dot, filename, output_format)
             if filepath:
