@@ -210,7 +210,7 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
                 st.success(f"Node '{node_name}' added.")
             else:
                 st.warning("Please enter a node name.")
-        for i, node in enumerate(session_state[f'{diagram_type}_nodes'][:] ): # Iterate over a copy
+        for i, node in enumerate(session_state[f'{diagram_type}_nodes'][:] ):  # Iterate over a copy
             col_node, col_delete_node = st.columns([3, 1])
             with col_node:
                 st.markdown(f"- {node['type']}: {node['name']}")
@@ -226,21 +226,24 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
         destination = st.selectbox("Destination:", [""] + node_names, key=f'{diagram_type}_dest')
         label = st.text_input("Label:", key=f'{diagram_type}_label')
         bidirectional = st.checkbox("Bidirectional", key=f'{diagram_type}_bidirectional')
-        if st.button(f"Add {connection_label[:-1]}" if connection_label.endswith("s") else f"Add {connection_label}", key=f'{diagram_type}_add_connection'):
+        if st.button(f"Add {connection_label[:-1]}" if connection_label.endswith("s") else f"Add {connection_label}",
+                     key=f'{diagram_type}_add_connection'):
             if source and destination and label and source != destination:
                 session_state[f'{diagram_type}_connections'].append(
                     {"source": source, "destination": destination, "label": label, "bidirectional": bidirectional}
                 )
-                st.success(f"{connection_label[:-1].capitalize() if connection_label.endswith('s') else connection_label.capitalize()} '{label}' added.")
+                st.success(
+                    f"{connection_label[:-1].capitalize() if connection_label.endswith('s') else connection_label.capitalize()} '{label}' added.")
             elif not source or not destination or not label:
                 st.warning(f"Please fill in all fields for the {connection_label.lower()}.")
             elif source == destination:
                 st.warning("Source and destination cannot be the same.")
-        for i, connection in enumerate(session_state[f'{diagram_type}_connections'][:]): # Iterate over a copy
+        for i, connection in enumerate(session_state[f'{diagram_type}_connections'][:]):  # Iterate over a copy
             col_connection, col_delete_connection = st.columns([4, 1])
             with col_connection:
                 bidirectional_arrow = "<->" if connection['bidirectional'] else "->"
-                st.markdown(f"- {connection['source']} {bidirectional_arrow} {connection['destination']}: {connection['label']}")
+                st.markdown(
+                    f"- {connection['source']} {bidirectional_arrow} {connection['destination']}: {connection['label']}")
             with col_delete_connection:
                 if st.button("🗑️", key=f'delete_{diagram_type}_connection_{i}'):
                     del session_state[f'{diagram_type}_connections'][i]
@@ -248,13 +251,15 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
 
         save_filename = st.text_input("Save As:", key=f'{diagram_type}_save_filename')
         if st.button("Save", key=f'{diagram_type}_save'):
-            save_data(diagram_type, session_state[f'{diagram_type}_nodes'], session_state[f'{diagram_type}_connections'], save_filename)
+            save_data(diagram_type, session_state[f'{diagram_type}_nodes'],
+                      session_state[f'{diagram_type}_connections'], save_filename)
 
     with col3:
         st.header("Load")
         available_files = get_available_data_files(diagram_type)
         if available_files:
-            load_filename = st.selectbox("Select File to Load:", [""] + available_files, key=f'{diagram_type}_load_filename')
+            load_filename = st.selectbox("Select File to Load:", [""] + available_files,
+                                        key=f'{diagram_type}_load_filename')
         else:
             st.info("No saved data files found.")
             load_filename = ""
@@ -274,10 +279,11 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
         if st.button("Reset", key=f'{diagram_type}_reset'):
             session_state[f'{diagram_type}_nodes'] = []
             session_state[f'{diagram_type}_connections'] = []
-            st.rerun() # Force a rerun to clear the UI immediately
+            st.rerun()  # Force a rerun to clear the UI immediately
 
     st.header("Diagram")
-    output_format = st.selectbox("Select output format:", ["png", "svg", "pdf", "dot"], key=f'{diagram_type}_output_format')
+    output_format = st.selectbox("Select output format:", ["png", "svg", "pdf", "dot"],
+                                key=f'{diagram_type}_output_format')
     layout_options = ["dot", "neato", "fdp", "sfdp", "twopi", "circo"]
     layout_style = st.selectbox("Select Layout Style:", layout_options, index=layout_options.index("dot"),
                                 key=f'{diagram_type}_layout')
@@ -295,32 +301,30 @@ def diagram_page_logic(session_state, diagram_type, node_types, connection_label
     label_position_key_list = list(label_position_options_dict.keys())
     label_position_display_list = list(label_position_options_dict.values())
     label_position_index = label_position_key_list.index('c')
-    selected_label_position_display = st.selectbox("Label Position:", label_position_display_list, index=label_position_index,
-                                   key=f'{diagram_type}_label_position_display')
-    label_position = [k for k, v in label_position_options_dict.items() if v == selected_label_position_display][0]
+    selected_label_position_display = st.selectbox("Label Position:", label_position_display_list,
+                                                   index=label_position_index,
+                                                   key=f'{diagram_type}_label_position_display')
+    label_position = [k for k, v in label_position_options_dict.items() if
+                      v == selected_label_position_display][0]
 
     fontsize_options = list(range(8, 31, 2))
     default_fontsize_index = fontsize_options.index(12)
-    fontsize = st.selectbox("Select Font Size:", fontsize_options, index=default_fontsize_index, key=f'{diagram_type}_fontsize')
-
-    label_distance = st.slider("Label Distance:", min_value=1.0, max_value=5.0, value=1.5, step=0.1,
-                                 key=f'{diagram_type}_label_distance',
-                                 help="Controls the distance of edge labels from the edges.")
-
+    fontsize = st.selectbox("Select Font Size:", fontsize_options, index=default_fontsize_index,
+                            key=f'{diagram_type}_fontsize')
     filename = st.text_input("Enter filename (without extension):", key=f'{diagram_type}_filename',
-                                value=f"{diagram_type}_diagram")
+                            value=f"{diagram_type}_diagram")
 
     if st.button("Generate and Display Diagram", key=f'{diagram_type}_gen'):
         if session_state[f'{diagram_type}_nodes'] and session_state[f'{diagram_type}_connections']:
             dot = generate_diagram(session_state[f'{diagram_type}_nodes'],
-                                     session_state[f'{diagram_type}_connections'], output_format, fontsize,
-                                     layout_style, diagram_type, label_position, st.session_state[f'{diagram_type}_label_distance'])
+                                  session_state[f'{diagram_type}_connections'], output_format, fontsize,
+                                  layout_style, diagram_type, label_position)
             st.graphviz_chart(dot, use_container_width=True)
             filepath = save_diagram(dot, filename, output_format)
             if filepath:
                 st.success(f"Diagram saved as: {filepath}")
         else:
             st.warning("Please add nodes and connections to generate the diagram.")
-            
+
 if __name__ == "__main__":
     main()
